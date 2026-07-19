@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Ingénieur</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+     <header class="header" id="grad1">
+
+    <div class="left">
+        ☰
+    </div>
+
+    <div class="title">
+        WORDLE INGINERESC
+    </div>
+
+    <div class="right">
+        ? ⚙ ▤
+    </div>
+    </header>
+    <div class="bckg">
+        <video autoplay loop muted plays-inline>
+            <source src="images/ham2.mp4" type="video/mp4">
+        </video>
+    </div>
+
+<div class="container text-center mt-5">
+    <!--<h1 class="mb-4">WORDLE INGINERESC</h1>-->
+
+    <div id="grid" class="mx-auto"></div>
+
+    <input type="text" id="input" maxlength="5" class="form-control mt-4 w-25 mx-auto" placeholder="Entrez un mot">
+    <button class="btn btn-success mt-2" onclick="verifica()">Vérifier</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
+import { getFirestore, collection, getDocs, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAOaFGPkX2HgHZd2DCzRw_pHIgWdcR5-gQ",
+    authDomain: "wordle-203ce.firebaseapp.com",
+    projectId: "wordle-203ce",
+    storageBucket: "wordle-203ce.firebasestorage.app",
+    messagingSenderId: "817152619794",
+    appId: "1:817152619794:web:9a565bf308c70287f36fcb",
+    measurementId: "G-235CMNRDMP"
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+
+let raspuns = ""; 
+let rand = 0;
+
+const grid = document.getElementById("grid");
+
+for(let i = 0; i < 6; i++){
+    let linie = document.createElement("div");
+    linie.className = "row justify-content-center";
+    for(let j = 0; j < 5; j++){
+        let celula = document.createElement("div");
+        celula.className = "box";
+        linie.appendChild(celula);
+    }
+    grid.appendChild(linie);
+}
+
+
+
+async function extrageCuvinte() {
+    const lista = [];
+    const dbCuvinte = await getDocs(collection(db, "cuvinte"));
+    dbCuvinte.forEach((doc) => lista.push(doc.data().text.toUpperCase()));
+    if(lista.length > 0) raspuns = lista[Math.floor(Math.random() * lista.length)];
+}
+extrageCuvinte();
+
+window.verifica = function(){
+    if(!raspuns) return; 
+    const input = document.getElementById("input");
+    const val = input.value.toUpperCase();
+    if(val.length !== 5) return;
+
+    const linie = grid.children[rand].children;
+    
+    const culori = Array(5).fill("gray");
+    const raspusDisponibil = raspuns.split(""); 
+
+    for(let i = 0; i < 5; i++){
+        if(val[i] === raspuns[i]){
+            culori[i] = "green";
+            raspusDisponibil[i] = null; 
+        }
+                    //animatia formula i*100 pentru fiecare box pus
+        linie[i].style.animationDelay = i * 100 + "ms";
+        void linie[i].offsetWidth; //mai verifica o data rezultatul inainte de animatie
+        linie[i].classList.add("flip");
+    }
+
+    
+    for(let i = 0; i < 5; i++){
+        if(culori[i] === "green") continue; 
+        const idx = raspusDisponibil.indexOf(val[i]);
+        if(idx !== -1){
+            culori[i] = "orange";
+            raspusDisponibil[idx] = null; 
+        }
+                    //animatia formula i*100 pentru fiecare box pus
+        linie[i].style.animationDelay = i * 100 + "ms";
+        void linie[i].offsetWidth; //mai verifica o data rezultatul inainte de animatie
+        linie[i].classList.add("flip");
+    }
+    for(let i = 0; i < 5; i++){
+        linie[i].innerText = val[i];
+        linie[i].style.background = culori[i];
+        //animatia formula i*100 pentru fiecare box pus
+        linie[i].style.animationDelay = i * 100 + "ms";
+        void linie[i].offsetWidth; //mai verifica o data rezultatul inainte de animatie
+        linie[i].classList.add("flip");
+    }
+
+    rand++;
+    input.value = "";
+    if(val === raspuns){
+        alert("Correct! Terme identifie!");
+        salveazaInClasament();
+    } else if (rand=== 6) {
+        afiseazaClasament();
+    }
+
+}
+
+async function salveazaInClasament() {
+    let nume = prompt("Entrez votre nom pour le classement :");
+    if(nume && nume.trim() !== "") {
+        await addDoc(collection(db, "leaderboard"), {
+            nume: nume.trim(),
+            incercari: rand
+        });
+    }
+    afiseazaClasament();
+}
+
+async function afiseazaClasament() {
+    document.getElementById("leaderboard-container").style.display = "block";
+    const listaHtml = document.getElementById("leaderboard-lista");
+    listaHtml.innerHTML = "";
+
+    const q = query(collection(db, "leaderboard"), orderBy("incercari", "asc"), limit(10));
+    const querySnapshot = await getDocs(q);
+
+    querySnapshot.forEach((doc) => {
+        let data = doc.data();
+        listaHtml.innerHTML += `<li class='list-group-item d-flex justify-content-between align-items-center'>
+            <strong>${data.nume}</strong> 
+            <span class="badge bg-success rounded-pill">${data.incercari} essais</span>
+        </li>`;
+    });
+}
+</script>
+     <div id="leaderboard-container" class="mt-5 p-3 rounded" style="background: rgba(0,0,0,0.7); max-width: 400px; margin: 0 auto; display: none;">
+        <h3 class="text-white">Top 10 Ingénieurs</h3>
+        <ul id="leaderboard-lista" class="list-group text-dark text-start mt-3"></ul>
+    </div>
+</body>
+</html>
