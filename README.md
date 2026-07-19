@@ -91,8 +91,6 @@ I would also like to add daily challenges, where every player receives the same 
 
 The project could also be expanded by adding more categories of words and creating a larger database of words. I would also like to improve the design and make the game more responsive and accessible on different devices.
 ## ✦ Video
-
-[[[https://github.com/user-attachments/assets/9e4f8f83-a056-499d-86ee-88924dec0738](https://github.com/user-attachments/assets/ccdc498a-ea1b-4784-961d-1c8adb073408)](https://github.com/user-attachments/assets/573fffd0-b090-4fc0-9879-13d6f60b6087)
-](https://github.com/user-attachments/assets/573fffd0-b090-4fc0-9879-13d6f60b6087)
+https://github.com/user-attachments/assets/573fffd0-b090-4fc0-9879-13d6f60b6087
 
 
